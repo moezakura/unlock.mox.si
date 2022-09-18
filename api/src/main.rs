@@ -4,7 +4,6 @@ use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
 async fn main() -> std::io::Result<()> {
     HttpServer::new(|| {
         App::new()
-            .service(hello)
             .service(echo)
             .route("/hey", web::get().to(manual_hello))
     })
@@ -13,11 +12,6 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
 
 #[post("/echo")]
 async fn echo(req_body: String) -> impl Responder {
