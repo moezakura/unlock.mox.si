@@ -1,0 +1,17 @@
+version: "3.9"
+
+services:
+  api:
+    build:
+      context: ./docker/api
+      dockerfile: Dockerfile
+      target: develop
+    volumes:
+      - type: bind
+        source: "./api/"
+        target: "/usr/src/unlock-mox-si/api"
+    ports:
+      - target: 8080
+        published: 18080
+
+#    environment:
