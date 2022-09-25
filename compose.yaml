@@ -13,5 +13,5 @@ services:
     ports:
       - target: 8080
         published: 18080
-
-#    environment:
+    env_file:
+      - .env

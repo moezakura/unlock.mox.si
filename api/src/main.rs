@@ -1,29 +1,24 @@
-use actix_web::{get, post, web, App, HttpResponse, HttpServer, Responder};
+use actix_web::{web, App, HttpServer};
+use unlock_mox_si_api::controller;
+use unlock_mox_si_api::domain::config;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    HttpServer::new(|| {
+    let load_config = config::Service::load();
+    let load_config = match load_config {
+        Ok(c) => c,
+        Err(f) => {
+            panic!("failed to load config: {}", f);
+        }
+    };
+    let inject_config = web::Data::new(load_config);
+
+    HttpServer::new(move || {
         App::new()
-            .service(hello)
-            .service(echo)
-            .route("/hey", web::get().to(manual_hello))
+            .app_data(inject_config.clone())
+            .service(controller::open::post)
     })
     .bind(("0.0.0.0", 8080))?
     .run()
     .await
-}
-
-
-#[get("/")]
-async fn hello() -> impl Responder {
-    HttpResponse::Ok().body("Hello world!")
-}
-
-#[post("/echo")]
-async fn echo(req_body: String) -> impl Responder {
-    HttpResponse::Ok().body(req_body)
-}
-
-async fn manual_hello() -> impl Responder {
-    HttpResponse::Ok().body("Hey there!")
 }
