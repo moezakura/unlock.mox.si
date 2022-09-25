@@ -41,9 +41,12 @@ pub async fn post(req: web::Json<PostRequest>, data: web::Data<config::Config>) 
 
     let app_data = data.clone();
     let switch_bot_token = app_data.switch_bot_token.clone();
-    let interphone_bot_id = app_data.interphone_bot_id.clone();
+    let switch_bot_secret = app_data.switch_bot_secret.clone();
 
-    let service = switch_bot::service::Service::new(switch_bot_token);
+    let interphone_bot_id = app_data.interphone_bot_id.clone();
+    let lock_bot_id = app_data.lock_bot_id.clone();
+
+    let service = switch_bot::service::Service::new(switch_bot_token, switch_bot_secret);
 
     // インターホンを解錠する
     let interphone_open = if req.is_interphone_open {
@@ -57,8 +60,20 @@ pub async fn post(req: web::Json<PostRequest>, data: web::Data<config::Config>) 
         "not open".to_string()
     };
 
+    // ドアを開ける
+    let door_open = if req.is_door_open {
+        let door_open = open_door(lock_bot_id, service.clone()).await;
+        let door_open = match door_open {
+            Ok(_) => "open".to_string(),
+            Err(e) => e,
+        };
+        door_open
+    } else {
+        "not open".to_string()
+    };
+
     let open_result = OpenResult {
-        door_open: "".to_string(),
+        door_open: door_open,
         interphone_open: interphone_open,
     };
     let post_response = PostResponse {
@@ -74,6 +89,24 @@ async fn open_interphone(
     service: switch_bot::service::Service,
 ) -> Result<(), String> {
     let res = service.push_button(interphone_bot_id).await;
+    if res.is_err() {
+        let err = res.unwrap_err();
+        return Err(err.to_string());
+    }
+
+    let res = res.unwrap();
+    if res.status_code != 100 {
+        return Err(res.message);
+    }
+
+    Ok(())
+}
+
+async fn open_door(
+    lock_bot_id: String,
+    service: switch_bot::service::Service,
+) -> Result<(), String> {
+    let res = service.open_lock(lock_bot_id).await;
     if res.is_err() {
         let err = res.unwrap_err();
         return Err(err.to_string());
