@@ -54,6 +54,9 @@ impl Service {
         Ok(command_result)
     }
 
+    /**
+     * open interphone
+     */
     pub async fn push_button(&self, bot_id: String) -> Result<CommandResult, Box<dyn Error>> {
         let res = self.exec_command(bot_id, "press".to_string()).await?;
         Ok(res)
